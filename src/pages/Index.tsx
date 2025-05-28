@@ -14,7 +14,8 @@ import {
   AlertTriangle,
   CheckCircle,
   Clock,
-  Zap
+  Zap,
+  Users
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -58,7 +59,52 @@ const Index = () => {
     setIsLoading(actionName);
     console.log(`Triggering action: ${actionName}`);
 
-    // Simulate API call
+    try {
+      if (actionName === 'Customer Sync') {
+        const response = await fetch('http://127.0.0.1:3000/integration/fetch-customers', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        if (!response.ok) {
+          throw new Error('Failed to fetch customers');
+        }
+        const { success, data, error } = await response.json();
+        if (!success) {
+          throw new Error(error || 'Failed to sync customers');
+        }
+        const customerCount = data?.useCompany?.associate?.items?.length || 0;
+        description = `Successfully synced ${customerCount} customers`;
+      } else if (actionName === 'Product Sync') {
+        const response = await fetch('http://127.0.0.1:3000/integration/fetch-articles', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        if (!response.ok) {
+          throw new Error('Failed to fetch articles');
+        }
+        const { success, data, error } = await response.json();
+        if (!success) {
+          throw new Error(error || 'Failed to sync articles');
+        }
+        const articleCount = data?.items?.length || 0;
+        description = `Successfully synced ${articleCount} articles`;
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      toast({
+        title: "Error",
+        description: `Failed to execute ${actionName}`,
+        variant: "destructive"
+      });
+      setIsLoading(null);
+      return;
+    }
+
+    // Simulate API call for other actions
     setTimeout(() => {
       const newLog: ActionLog = {
         id: Date.now().toString(),
@@ -271,6 +317,29 @@ const Index = () => {
                     <RefreshCw className="h-4 w-4 mr-2" />
                   )}
                   Full Sync
+                </Button>
+              </div>
+
+              {/* Customer Sync */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <Users className="h-5 w-5 text-indigo-600" />
+                  <h3 className="font-semibold text-slate-800">Customer Sync</h3>
+                </div>
+                <p className="text-sm text-slate-600 mb-4">
+                  Synchronize customer data from ERP to Ecommerce platform
+                </p>
+                <Button 
+                  className="w-full bg-indigo-600 hover:bg-indigo-700 transition-colors"
+                  onClick={() => triggerAction('Customer Sync', 'Customer data synchronized successfully')}
+                  disabled={isLoading === 'Customer Sync'}
+                >
+                  {isLoading === 'Customer Sync' ? (
+                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Users className="h-4 w-4 mr-2" />
+                  )}
+                  Sync Customers
                 </Button>
               </div>
             </div>
