@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { 
@@ -6,7 +5,8 @@ import {
   FileText,
   Activity,
   Settings,
-  Database
+  Database,
+  RefreshCw
 } from 'lucide-react';
 import {
   Sidebar,
@@ -23,6 +23,7 @@ import {
 
 const navigationItems = [
   { title: 'Dashboard', url: '/', icon: Home },
+  { title: 'Sync Manager', url: '/sync', icon: RefreshCw },
   { title: 'Logs', url: '/logs', icon: FileText },
   { title: 'Activity Monitor', url: '/activity', icon: Activity },
   { title: 'System Status', url: '/status', icon: Database },

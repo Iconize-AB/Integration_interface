@@ -15,7 +15,10 @@ import {
   CheckCircle,
   Clock,
   Zap,
-  Users
+  Users,
+  FileText,
+  CreditCard,
+  Truck
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -26,6 +29,72 @@ interface ActionLog {
   status: 'success' | 'pending' | 'error';
   message: string;
 }
+
+interface SyncAction {
+  id: string;
+  name: string;
+  description: string;
+  endpoint: string;
+  method: 'POST';
+  icon: React.ElementType;
+  color: string;
+  category: 'data-sync' | 'order-sync' | 'inventory' | 'customers' | 'system';
+}
+
+const syncActions: SyncAction[] = [
+  // Data Sync Operations
+  {
+    id: 'fetch-customers',
+    name: 'Customer Sync',
+    description: 'Fetch and sync customer data from Business NXT to Vendre',
+    endpoint: '/integration/fetch-customers',
+    method: 'POST',
+    icon: Users,
+    color: 'bg-indigo-600 hover:bg-indigo-700',
+    category: 'customers'
+  },
+  {
+    id: 'fetch-articles',
+    name: 'Product Sync',
+    description: 'Fetch and sync product catalog from Business NXT to Vendre',
+    endpoint: '/integration/fetch-articles',
+    method: 'POST',
+    icon: Package,
+    color: 'bg-blue-600 hover:bg-blue-700',
+    category: 'data-sync'
+  },
+  {
+    id: 'fetch-inventory',
+    name: 'Inventory Sync',
+    description: 'Update stock levels and inventory data from Business NXT to Vendre',
+    endpoint: '/integration/fetch-inventory',
+    method: 'POST',
+    icon: TrendingUp,
+    color: 'bg-green-600 hover:bg-green-700',
+    category: 'inventory'
+  },
+  // Order Sync Operations
+  {
+    id: 'sync-order-statuses',
+    name: 'Order Status Sync',
+    description: 'Sync order statuses from Business NXT to Vendre',
+    endpoint: '/integration/sync-order-statuses',
+    method: 'POST',
+    icon: ShoppingCart,
+    color: 'bg-purple-600 hover:bg-purple-700',
+    category: 'order-sync'
+  },
+  {
+    id: 'full-sync',
+    name: 'Full System Sync',
+    description: 'Complete synchronization of all data between systems',
+    endpoint: '/integration/full-sync',
+    method: 'POST',
+    icon: RefreshCw,
+    color: 'bg-red-600 hover:bg-red-700',
+    category: 'system'
+  }
+];
 
 const Index = () => {
   const [isLoading, setIsLoading] = useState<string | null>(null);
@@ -55,73 +124,66 @@ const Index = () => {
 
   const { toast } = useToast();
 
-  const triggerAction = async (actionName: string, description: string) => {
-    setIsLoading(actionName);
-    console.log(`Triggering action: ${actionName}`);
+  const triggerAction = async (action: SyncAction) => {
+    setIsLoading(action.id);
+    console.log(`Triggering action: ${action.name}`);
 
     try {
-      if (actionName === 'Customer Sync') {
-        const response = await fetch('http://127.0.0.1:3000/integration/fetch-customers', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        });
-        if (!response.ok) {
-          throw new Error('Failed to fetch customers');
+      const response = await fetch(`http://127.0.0.1:3000${action.endpoint}`, {
+        method: action.method,
+        headers: {
+          'Content-Type': 'application/json'
         }
-        const { success, data, error } = await response.json();
-        if (!success) {
-          throw new Error(error || 'Failed to sync customers');
-        }
-        const customerCount = data?.useCompany?.associate?.items?.length || 0;
-        description = `Successfully synced ${customerCount} customers`;
-      } else if (actionName === 'Product Sync') {
-        const response = await fetch('http://127.0.0.1:3000/integration/fetch-articles', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        });
-        if (!response.ok) {
-          throw new Error('Failed to fetch articles');
-        }
-        const { success, data, error } = await response.json();
-        if (!success) {
-          throw new Error(error || 'Failed to sync articles');
-        }
-        const articleCount = data?.items?.length || 0;
-        description = `Successfully synced ${articleCount} articles`;
-      }
-    } catch (error) {
-      console.error('Error:', error);
-      toast({
-        title: "Error",
-        description: `Failed to execute ${actionName}`,
-        variant: "destructive"
       });
-      setIsLoading(null);
-      return;
-    }
 
-    // Simulate API call for other actions
-    setTimeout(() => {
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Operation failed');
+      }
+
+      // Create success log entry
       const newLog: ActionLog = {
         id: Date.now().toString(),
-        action: actionName,
+        action: action.name,
         timestamp: new Date(),
         status: 'success',
-        message: description
+        message: result.message || `${action.name} completed successfully`
       };
 
       setActionLogs(prev => [newLog, ...prev.slice(0, 4)]);
-      setIsLoading(null);
-
+      
       toast({
-        title: "Action Triggered",
-        description: `${actionName} has been executed successfully`,
+        title: "Success",
+        description: `${action.name} has been executed successfully`,
       });
-    }, 2000);
+
+    } catch (error) {
+      console.error('Error:', error);
+      
+      // Create error log entry
+      const newLog: ActionLog = {
+        id: Date.now().toString(),
+        action: action.name,
+        timestamp: new Date(),
+        status: 'error',
+        message: error instanceof Error ? error.message : 'Unknown error occurred'
+      };
+
+      setActionLogs(prev => [newLog, ...prev.slice(0, 4)]);
+      
+      toast({
+        title: "Error",
+        description: `Failed to execute ${action.name}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(null);
+    }
   };
 
   const getStatusIcon = (status: string) => {
@@ -150,6 +212,30 @@ const Index = () => {
     }
   };
 
+  const groupedActions = syncActions.reduce((acc, action) => {
+    if (!acc[action.category]) {
+      acc[action.category] = [];
+    }
+    acc[action.category].push(action);
+    return acc;
+  }, {} as Record<string, SyncAction[]>);
+
+  const categoryLabels = {
+    'data-sync': 'Data Synchronization',
+    'order-sync': 'Order Management',
+    'inventory': 'Inventory Management',
+    'customers': 'Customer Management',
+    'system': 'System Operations'
+  };
+
+  const categoryIcons = {
+    'data-sync': Database,
+    'order-sync': ShoppingCart,
+    'inventory': TrendingUp,
+    'customers': Users,
+    'system': Settings
+  };
+
   return (
     <div className="bg-gradient-to-br from-slate-50 to-slate-100 p-6">
       <div className="max-w-7xl mx-auto space-y-8">
@@ -159,11 +245,11 @@ const Index = () => {
             <div className="p-3 bg-blue-600 rounded-xl">
               <Zap className="h-8 w-8 text-white" />
             </div>
-            <h1 className="text-4xl font-bold text-slate-800">Dashboard</h1>
+            <h1 className="text-4xl font-bold text-slate-800">Integration Dashboard</h1>
           </div>
           <p className="text-xl text-slate-600 max-w-3xl mx-auto">
-            Manage data synchronization between your ERP system and Ecommerce platform. 
-            Trigger manual actions and monitor integration status in real-time.
+            Manage data synchronization between Business NXT ERP and Vendre E-commerce platform. 
+            Trigger manual sync operations and monitor integration status in real-time.
           </p>
         </div>
 
@@ -172,7 +258,7 @@ const Index = () => {
           <Card className="border-l-4 border-l-green-500 shadow-lg hover:shadow-xl transition-shadow">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium text-green-700">ERP System</CardTitle>
+                <CardTitle className="text-sm font-medium text-green-700">Business NXT ERP</CardTitle>
                 <Database className="h-5 w-5 text-green-600" />
               </div>
             </CardHeader>
@@ -187,7 +273,7 @@ const Index = () => {
           <Card className="border-l-4 border-l-blue-500 shadow-lg hover:shadow-xl transition-shadow">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium text-blue-700">Middleware</CardTitle>
+                <CardTitle className="text-sm font-medium text-blue-700">Middleware Service</CardTitle>
                 <RefreshCw className="h-5 w-5 text-blue-600" />
               </div>
             </CardHeader>
@@ -202,7 +288,7 @@ const Index = () => {
           <Card className="border-l-4 border-l-purple-500 shadow-lg hover:shadow-xl transition-shadow">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium text-purple-700">Ecommerce</CardTitle>
+                <CardTitle className="text-sm font-medium text-purple-700">Vendre E-commerce</CardTitle>
                 <ShoppingCart className="h-5 w-5 text-purple-600" />
               </div>
             </CardHeader>
@@ -215,136 +301,50 @@ const Index = () => {
           </Card>
         </div>
 
-        {/* Action Triggers */}
-        <Card className="shadow-xl">
-          <CardHeader>
-            <CardTitle className="text-2xl text-slate-800 flex items-center gap-3">
-              <Settings className="h-6 w-6 text-blue-600" />
-              Manual Action Triggers
-            </CardTitle>
-            <CardDescription>
-              Execute integration actions manually to sync data between systems
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {/* Product Sync */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 mb-2">
-                  <Package className="h-5 w-5 text-blue-600" />
-                  <h3 className="font-semibold text-slate-800">Product Sync</h3>
+        {/* Sync Operations by Category */}
+        {Object.entries(groupedActions).map(([category, actions]) => {
+          const CategoryIcon = categoryIcons[category as keyof typeof categoryIcons];
+          return (
+            <Card key={category} className="shadow-xl">
+              <CardHeader>
+                <CardTitle className="text-2xl text-slate-800 flex items-center gap-3">
+                  <CategoryIcon className="h-6 w-6 text-blue-600" />
+                  {categoryLabels[category as keyof typeof categoryLabels]}
+                </CardTitle>
+                <CardDescription>
+                  Manage {categoryLabels[category as keyof typeof categoryLabels].toLowerCase()} operations
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {actions.map((action) => (
+                    <div key={action.id} className="space-y-3">
+                      <div className="flex items-center gap-2 mb-2">
+                        <action.icon className="h-5 w-5 text-blue-600" />
+                        <h3 className="font-semibold text-slate-800">{action.name}</h3>
+                      </div>
+                      <p className="text-sm text-slate-600 mb-4">
+                        {action.description}
+                      </p>
+                      <Button 
+                        className={`w-full ${action.color} transition-colors`}
+                        onClick={() => triggerAction(action)}
+                        disabled={isLoading === action.id}
+                      >
+                        {isLoading === action.id ? (
+                          <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                        ) : (
+                          <action.icon className="h-4 w-4 mr-2" />
+                        )}
+                        {isLoading === action.id ? 'Running...' : `Run ${action.name}`}
+                      </Button>
+                    </div>
+                  ))}
                 </div>
-                <p className="text-sm text-slate-600 mb-4">
-                  Synchronize product catalog from ERP to Ecommerce platform
-                </p>
-                <Button 
-                  className="w-full bg-blue-600 hover:bg-blue-700 transition-colors"
-                  onClick={() => triggerAction('Product Sync', 'Product catalog synchronized successfully')}
-                  disabled={isLoading === 'Product Sync'}
-                >
-                  {isLoading === 'Product Sync' ? (
-                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <Package className="h-4 w-4 mr-2" />
-                  )}
-                  Sync Products
-                </Button>
-              </div>
-
-              {/* Inventory Update */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 mb-2">
-                  <TrendingUp className="h-5 w-5 text-green-600" />
-                  <h3 className="font-semibold text-slate-800">Inventory Update</h3>
-                </div>
-                <p className="text-sm text-slate-600 mb-4">
-                  Update stock levels and inventory data across platforms
-                </p>
-                <Button 
-                  className="w-full bg-green-600 hover:bg-green-700 transition-colors"
-                  onClick={() => triggerAction('Inventory Update', 'Stock levels updated successfully')}
-                  disabled={isLoading === 'Inventory Update'}
-                >
-                  {isLoading === 'Inventory Update' ? (
-                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <TrendingUp className="h-4 w-4 mr-2" />
-                  )}
-                  Update Inventory
-                </Button>
-              </div>
-
-              {/* Order Processing */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 mb-2">
-                  <ShoppingCart className="h-5 w-5 text-purple-600" />
-                  <h3 className="font-semibold text-slate-800">Order Processing</h3>
-                </div>
-                <p className="text-sm text-slate-600 mb-4">
-                  Process pending orders and send to ERP system
-                </p>
-                <Button 
-                  className="w-full bg-purple-600 hover:bg-purple-700 transition-colors"
-                  onClick={() => triggerAction('Order Processing', 'Orders processed and sent to ERP')}
-                  disabled={isLoading === 'Order Processing'}
-                >
-                  {isLoading === 'Order Processing' ? (
-                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <ShoppingCart className="h-4 w-4 mr-2" />
-                  )}
-                  Process Orders
-                </Button>
-              </div>
-
-              {/* Full Sync */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 mb-2">
-                  <RefreshCw className="h-5 w-5 text-orange-600" />
-                  <h3 className="font-semibold text-slate-800">Full Sync</h3>
-                </div>
-                <p className="text-sm text-slate-600 mb-4">
-                  Complete synchronization of all data between systems
-                </p>
-                <Button 
-                  className="w-full bg-orange-600 hover:bg-orange-700 transition-colors"
-                  onClick={() => triggerAction('Full Sync', 'Complete data synchronization finished')}
-                  disabled={isLoading === 'Full Sync'}
-                >
-                  {isLoading === 'Full Sync' ? (
-                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <RefreshCw className="h-4 w-4 mr-2" />
-                  )}
-                  Full Sync
-                </Button>
-              </div>
-
-              {/* Customer Sync */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 mb-2">
-                  <Users className="h-5 w-5 text-indigo-600" />
-                  <h3 className="font-semibold text-slate-800">Customer Sync</h3>
-                </div>
-                <p className="text-sm text-slate-600 mb-4">
-                  Synchronize customer data from ERP to Ecommerce platform
-                </p>
-                <Button 
-                  className="w-full bg-indigo-600 hover:bg-indigo-700 transition-colors"
-                  onClick={() => triggerAction('Customer Sync', 'Customer data synchronized successfully')}
-                  disabled={isLoading === 'Customer Sync'}
-                >
-                  {isLoading === 'Customer Sync' ? (
-                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <Users className="h-4 w-4 mr-2" />
-                  )}
-                  Sync Customers
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
+          );
+        })}
 
         {/* Activity Log */}
         <Card className="shadow-xl">
