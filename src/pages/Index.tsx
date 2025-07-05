@@ -37,7 +37,6 @@ interface SyncAction {
   endpoint: string;
   method: 'POST';
   icon: React.ElementType;
-  color: string;
   category: 'data-sync' | 'order-sync' | 'inventory' | 'customers' | 'system';
 }
 
@@ -50,7 +49,6 @@ const syncActions: SyncAction[] = [
     endpoint: '/integration/fetch-customers',
     method: 'POST',
     icon: Users,
-    color: 'bg-indigo-600 hover:bg-indigo-700',
     category: 'customers'
   },
   {
@@ -60,7 +58,6 @@ const syncActions: SyncAction[] = [
     endpoint: '/integration/fetch-articles',
     method: 'POST',
     icon: Package,
-    color: 'bg-blue-600 hover:bg-blue-700',
     category: 'data-sync'
   },
   {
@@ -70,7 +67,6 @@ const syncActions: SyncAction[] = [
     endpoint: '/integration/fetch-inventory',
     method: 'POST',
     icon: TrendingUp,
-    color: 'bg-green-600 hover:bg-green-700',
     category: 'inventory'
   },
   // Order Sync Operations
@@ -81,7 +77,6 @@ const syncActions: SyncAction[] = [
     endpoint: '/integration/sync-order-statuses',
     method: 'POST',
     icon: ShoppingCart,
-    color: 'bg-purple-600 hover:bg-purple-700',
     category: 'order-sync'
   },
   {
@@ -91,36 +86,13 @@ const syncActions: SyncAction[] = [
     endpoint: '/integration/full-sync',
     method: 'POST',
     icon: RefreshCw,
-    color: 'bg-red-600 hover:bg-red-700',
     category: 'system'
   }
 ];
 
 const Index = () => {
   const [isLoading, setIsLoading] = useState<string | null>(null);
-  const [actionLogs, setActionLogs] = useState<ActionLog[]>([
-    {
-      id: '1',
-      action: 'Product Sync',
-      timestamp: new Date(Date.now() - 1000 * 60 * 15),
-      status: 'success',
-      message: '1,247 products synchronized successfully'
-    },
-    {
-      id: '2',
-      action: 'Inventory Update',
-      timestamp: new Date(Date.now() - 1000 * 60 * 30),
-      status: 'success',
-      message: 'Stock levels updated for 856 items'
-    },
-    {
-      id: '3',
-      action: 'Order Processing',
-      timestamp: new Date(Date.now() - 1000 * 60 * 45),
-      status: 'success',
-      message: '23 orders processed and sent to ERP'
-    }
-  ]);
+  const [actionLogs, setActionLogs] = useState<ActionLog[]>([]);
 
   const { toast } = useToast();
 
@@ -189,26 +161,26 @@ const Index = () => {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'success':
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
+        return <CheckCircle className="h-4 w-4 text-green-600" />;
       case 'pending':
-        return <Clock className="h-4 w-4 text-yellow-500" />;
+        return <Clock className="h-4 w-4 text-yellow-600" />;
       case 'error':
-        return <AlertTriangle className="h-4 w-4 text-red-500" />;
+        return <AlertTriangle className="h-4 w-4 text-red-600" />;
       default:
-        return <Activity className="h-4 w-4 text-gray-500" />;
+        return <Activity className="h-4 w-4 text-gray-600" />;
     }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'success':
-        return 'bg-green-100 text-green-800';
+        return 'bg-green-100 text-green-800 border-green-200';
       case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
       case 'error':
-        return 'bg-red-100 text-red-800';
+        return 'bg-red-100 text-red-800 border-red-200';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
 
@@ -221,11 +193,11 @@ const Index = () => {
   }, {} as Record<string, SyncAction[]>);
 
   const categoryLabels = {
-    'data-sync': 'Data Synchronization',
-    'order-sync': 'Order Management',
-    'inventory': 'Inventory Management',
-    'customers': 'Customer Management',
-    'system': 'System Operations'
+    'data-sync': 'DATA_SYNC',
+    'order-sync': 'ORDER_MANAGEMENT',
+    'inventory': 'INVENTORY_MANAGEMENT',
+    'customers': 'CUSTOMER_MANAGEMENT',
+    'system': 'SYSTEM_OPERATIONS'
   };
 
   const categoryIcons = {
@@ -237,153 +209,138 @@ const Index = () => {
   };
 
   return (
-    <div className="bg-gradient-to-br from-slate-50 to-slate-100 p-6">
-      <div className="max-w-7xl mx-auto space-y-8">
-        {/* Header */}
-        <div className="text-center space-y-4">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <div className="p-3 bg-blue-600 rounded-xl">
-              <Zap className="h-8 w-8 text-white" />
-            </div>
-            <h1 className="text-4xl font-bold text-slate-800">Integration Dashboard</h1>
+    <div className="p-6 space-y-6">
+      {/* Header */}
+      <div className="border-b border-gray-200 pb-4">
+        <h1 className="text-2xl font-mono text-gray-900 tracking-wide">SYSTEM_DASHBOARD</h1>
+        <p className="text-sm text-gray-600 font-mono mt-1">
+          Business NXT ↔ Vendre Integration Interface v1.0
+        </p>
+      </div>
+
+      {/* System Status */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-white border border-gray-200 p-4 rounded-md">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-mono text-gray-500 uppercase tracking-wider">BUSINESS_NXT_ERP</span>
+            <Database className="h-4 w-4 text-gray-600" />
           </div>
-          <p className="text-xl text-slate-600 max-w-3xl mx-auto">
-            Manage data synchronization between Business NXT ERP and Vendre E-commerce platform. 
-            Trigger manual sync operations and monitor integration status in real-time.
-          </p>
+          <div className="flex items-center gap-2">
+            <CheckCircle className="h-3 w-3 text-green-600" />
+            <span className="text-sm font-mono text-gray-800">STATUS: ONLINE</span>
+          </div>
         </div>
 
-        {/* System Status Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card className="border-l-4 border-l-green-500 shadow-lg hover:shadow-xl transition-shadow">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium text-green-700">Business NXT ERP</CardTitle>
-                <Database className="h-5 w-5 text-green-600" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-green-500" />
-                <span className="text-sm text-slate-600">Connected & Active</span>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-l-4 border-l-blue-500 shadow-lg hover:shadow-xl transition-shadow">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium text-blue-700">Middleware Service</CardTitle>
-                <RefreshCw className="h-5 w-5 text-blue-600" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-green-500" />
-                <span className="text-sm text-slate-600">Running Smoothly</span>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-l-4 border-l-purple-500 shadow-lg hover:shadow-xl transition-shadow">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium text-purple-700">Vendre E-commerce</CardTitle>
-                <ShoppingCart className="h-5 w-5 text-purple-600" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-green-500" />
-                <span className="text-sm text-slate-600">Online & Synced</span>
-              </div>
-            </CardContent>
-          </Card>
+        <div className="bg-white border border-gray-200 p-4 rounded-md">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-mono text-gray-500 uppercase tracking-wider">MIDDLEWARE_SERVICE</span>
+            <RefreshCw className="h-4 w-4 text-gray-600" />
+          </div>
+          <div className="flex items-center gap-2">
+            <CheckCircle className="h-3 w-3 text-green-600" />
+            <span className="text-sm font-mono text-gray-800">STATUS: RUNNING</span>
+          </div>
         </div>
 
-        {/* Sync Operations by Category */}
-        {Object.entries(groupedActions).map(([category, actions]) => {
-          const CategoryIcon = categoryIcons[category as keyof typeof categoryIcons];
-          return (
-            <Card key={category} className="shadow-xl">
-              <CardHeader>
-                <CardTitle className="text-2xl text-slate-800 flex items-center gap-3">
-                  <CategoryIcon className="h-6 w-6 text-blue-600" />
+        <div className="bg-white border border-gray-200 p-4 rounded-md">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-mono text-gray-500 uppercase tracking-wider">VENDRE_ECOMMERCE</span>
+            <ShoppingCart className="h-4 w-4 text-gray-600" />
+          </div>
+          <div className="flex items-center gap-2">
+            <CheckCircle className="h-3 w-3 text-green-600" />
+            <span className="text-sm font-mono text-gray-800">STATUS: SYNCED</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Sync Operations by Category */}
+      {Object.entries(groupedActions).map(([category, actions]) => {
+        const CategoryIcon = categoryIcons[category as keyof typeof categoryIcons];
+        return (
+          <div key={category} className="bg-white border border-gray-200 rounded-md">
+            <div className="border-b border-gray-200 px-4 py-3">
+              <div className="flex items-center gap-2">
+                <CategoryIcon className="h-4 w-4 text-gray-600" />
+                <h2 className="text-sm font-mono text-gray-900 uppercase tracking-wider">
                   {categoryLabels[category as keyof typeof categoryLabels]}
-                </CardTitle>
-                <CardDescription>
-                  Manage {categoryLabels[category as keyof typeof categoryLabels].toLowerCase()} operations
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {actions.map((action) => (
-                    <div key={action.id} className="space-y-3">
-                      <div className="flex items-center gap-2 mb-2">
-                        <action.icon className="h-5 w-5 text-blue-600" />
-                        <h3 className="font-semibold text-slate-800">{action.name}</h3>
-                      </div>
-                      <p className="text-sm text-slate-600 mb-4">
-                        {action.description}
-                      </p>
-                      <Button 
-                        className={`w-full ${action.color} transition-colors`}
-                        onClick={() => triggerAction(action)}
-                        disabled={isLoading === action.id}
-                      >
-                        {isLoading === action.id ? (
-                          <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                        ) : (
-                          <action.icon className="h-4 w-4 mr-2" />
-                        )}
-                        {isLoading === action.id ? 'Running...' : `Run ${action.name}`}
-                      </Button>
+                </h2>
+              </div>
+            </div>
+            <div className="p-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {actions.map((action) => (
+                  <div key={action.id} className="border border-gray-200 p-4 rounded-md bg-gray-50">
+                    <div className="flex items-center gap-2 mb-2">
+                      <action.icon className="h-4 w-4 text-gray-600" />
+                      <h3 className="font-mono text-sm text-gray-900">{action.name}</h3>
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
+                    <p className="text-xs text-gray-600 mb-3 font-mono leading-relaxed">
+                      {action.description}
+                    </p>
+                    <Button 
+                      variant="outline"
+                      size="sm"
+                      className="w-full font-mono text-xs border-gray-300 hover:bg-gray-100"
+                      onClick={() => triggerAction(action)}
+                      disabled={isLoading === action.id}
+                    >
+                      {isLoading === action.id ? (
+                        <RefreshCw className="h-3 w-3 mr-2 animate-spin" />
+                      ) : (
+                        <Zap className="h-3 w-3 mr-2" />
+                      )}
+                      {isLoading === action.id ? 'EXECUTING...' : 'EXECUTE'}
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+      })}
 
-        {/* Activity Log */}
-        <Card className="shadow-xl">
-          <CardHeader>
-            <CardTitle className="text-2xl text-slate-800 flex items-center gap-3">
-              <Activity className="h-6 w-6 text-green-600" />
-              Recent Activity
-            </CardTitle>
-            <CardDescription>
-              Latest integration actions and their status
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {actionLogs.map((log, index) => (
+      {/* Activity Log */}
+      <div className="bg-white border border-gray-200 rounded-md">
+        <div className="border-b border-gray-200 px-4 py-3">
+          <div className="flex items-center gap-2">
+            <Activity className="h-4 w-4 text-gray-600" />
+            <h2 className="text-sm font-mono text-gray-900 uppercase tracking-wider">ACTIVITY_LOG</h2>
+          </div>
+        </div>
+        <div className="p-4">
+          <div className="space-y-3">
+            {actionLogs.length === 0 ? (
+              <div className="text-center py-8">
+                <FileText className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                <p className="text-sm font-mono text-gray-500">NO_ACTIVITY_RECORDED</p>
+              </div>
+            ) : (
+              actionLogs.map((log, index) => (
                 <div key={log.id}>
-                  <div className="flex items-center justify-between p-4 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors">
-                    <div className="flex items-center gap-4">
+                  <div className="flex items-center justify-between p-3 rounded-md bg-gray-50 border border-gray-200">
+                    <div className="flex items-center gap-3">
                       {getStatusIcon(log.status)}
                       <div>
-                        <p className="font-medium text-slate-800">{log.action}</p>
-                        <p className="text-sm text-slate-600">{log.message}</p>
+                        <p className="font-mono text-sm text-gray-900">{log.action}</p>
+                        <p className="text-xs text-gray-600 font-mono">{log.message}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
-                      <Badge className={getStatusColor(log.status)}>
-                        {log.status}
+                      <Badge className={`text-xs font-mono border ${getStatusColor(log.status)}`}>
+                        {log.status.toUpperCase()}
                       </Badge>
-                      <span className="text-sm text-slate-500">
+                      <span className="text-xs font-mono text-gray-500">
                         {log.timestamp.toLocaleTimeString()}
                       </span>
                     </div>
                   </div>
                   {index < actionLogs.length - 1 && <Separator className="my-2" />}
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+              ))
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -23,11 +23,7 @@ import {
 
 const navigationItems = [
   { title: 'Dashboard', url: '/', icon: Home },
-  { title: 'Sync Manager', url: '/sync', icon: RefreshCw },
   { title: 'Logs', url: '/logs', icon: FileText },
-  { title: 'Activity Monitor', url: '/activity', icon: Activity },
-  { title: 'System Status', url: '/status', icon: Database },
-  { title: 'Settings', url: '/settings', icon: Settings },
 ];
 
 export function AppSidebar() {
@@ -38,16 +34,16 @@ export function AppSidebar() {
 
   const isActive = (path: string) => currentPath === path;
   const getNavClass = ({ isActive }: { isActive: boolean }) =>
-    isActive ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium' : 'hover:bg-sidebar-accent/50';
+    isActive ? 'bg-gray-200 text-gray-900 font-mono' : 'hover:bg-gray-100 text-gray-700 font-mono';
 
   return (
-    <Sidebar className={collapsed ? 'w-14' : 'w-60'} collapsible="icon">
-      <SidebarTrigger className="m-2 self-end" />
+    <Sidebar className={`${collapsed ? 'w-14' : 'w-64'} bg-white border-r border-gray-200`} collapsible="icon">
+      <SidebarTrigger className="m-2 self-end text-gray-600 hover:text-gray-900" />
       
-      <SidebarContent>
+      <SidebarContent className="px-2">
         <SidebarGroup>
-          <SidebarGroupLabel className="text-sidebar-foreground/70">
-            Integration Manager
+          <SidebarGroupLabel className="text-gray-500 font-mono text-xs uppercase tracking-wider px-3 py-2">
+            {collapsed ? 'NAV' : 'Navigation'}
           </SidebarGroupLabel>
           
           <SidebarGroupContent>
@@ -58,10 +54,10 @@ export function AppSidebar() {
                     <NavLink 
                       to={item.url} 
                       end 
-                      className={getNavClass}
+                      className={`flex items-center px-3 py-2 rounded-md text-sm transition-colors ${getNavClass}`}
                     >
-                      <item.icon className="mr-2 h-4 w-4" />
-                      {!collapsed && <span>{item.title}</span>}
+                      <item.icon className="mr-3 h-4 w-4" />
+                      {!collapsed && <span className="font-mono">{item.title}</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
