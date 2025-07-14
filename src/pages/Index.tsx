@@ -18,7 +18,8 @@ import {
   Users,
   FileText,
   CreditCard,
-  Truck
+  Truck,
+  DollarSign
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -37,7 +38,7 @@ interface SyncAction {
   endpoint: string;
   method: 'POST';
   icon: React.ElementType;
-  category: 'data-sync' | 'order-sync' | 'inventory' | 'customers' | 'system';
+  category: 'data-sync' | 'order-sync' | 'inventory' | 'customers' | 'pricing' | 'system';
 }
 
 const syncActions: SyncAction[] = [
@@ -79,6 +80,17 @@ const syncActions: SyncAction[] = [
     icon: ShoppingCart,
     category: 'order-sync'
   },
+  // Pricing Operations
+  {
+    id: 'sync-pricelists',
+    name: 'Pricelist Sync',
+    description: 'Sync pricing data and pricelists from Business NXT to Vendre',
+    endpoint: '/integration/sync-pricelists',
+    method: 'POST',
+    icon: DollarSign,
+    category: 'pricing'
+  },
+  // System Operations
   {
     id: 'full-sync',
     name: 'Full System Sync',
@@ -197,6 +209,7 @@ const Index = () => {
     'order-sync': 'ORDER_MANAGEMENT',
     'inventory': 'INVENTORY_MANAGEMENT',
     'customers': 'CUSTOMER_MANAGEMENT',
+    'pricing': 'PRICING_MANAGEMENT',
     'system': 'SYSTEM_OPERATIONS'
   };
 
@@ -205,6 +218,7 @@ const Index = () => {
     'order-sync': ShoppingCart,
     'inventory': TrendingUp,
     'customers': Users,
+    'pricing': DollarSign,
     'system': Settings
   };
 
