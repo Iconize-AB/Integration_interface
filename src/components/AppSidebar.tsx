@@ -6,7 +6,8 @@ import {
   Activity,
   Settings,
   Database,
-  RefreshCw
+  RefreshCw,
+  LogOut
 } from 'lucide-react';
 import {
   Sidebar,
@@ -26,7 +27,11 @@ const navigationItems = [
   { title: 'Logs', url: '/logs', icon: FileText },
 ];
 
-export function AppSidebar() {
+interface AppSidebarProps {
+  onLogout?: () => void;
+}
+
+export function AppSidebar({ onLogout }: AppSidebarProps) {
   const { state } = useSidebar();
   const location = useLocation();
   const currentPath = location.pathname;
@@ -65,6 +70,24 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+        
+        {onLogout && (
+          <SidebarGroup>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton 
+                    onClick={onLogout}
+                    className="flex items-center px-3 py-2 rounded-md text-sm transition-colors hover:bg-gray-100 text-gray-700 font-mono"
+                  >
+                    <LogOut className="mr-3 h-4 w-4" />
+                    {!collapsed && <span className="font-mono">Logout</span>}
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
     </Sidebar>
   );

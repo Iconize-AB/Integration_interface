@@ -5,6 +5,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
+import { LoginScreen } from "@/components/LoginScreen";
+import { useAuth } from "@/hooks/useAuth";
 import Index from "./pages/Index";
 import Logs from "./pages/Logs";
 import SyncManager from "./pages/SyncManager";
@@ -13,7 +15,27 @@ import CTFoodLogo from "./resources/CTFood_logo.png";
 
 const queryClient = new QueryClient();
 
-const App = () => (
+const App = () => {
+  const { isAuthenticated, login, logout } = useAuth();
+
+  // Show loading state while checking authentication
+  if (isAuthenticated === null) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show login screen if not authenticated
+  if (!isAuthenticated) {
+    return <LoginScreen onLogin={login} />;
+  }
+
+  return (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
@@ -21,7 +43,7 @@ const App = () => (
       <BrowserRouter>
         <SidebarProvider>
           <div className="min-h-screen flex w-full bg-gray-50">
-            <AppSidebar />
+            <AppSidebar onLogout={logout} />
             
             <div className="flex-1 flex flex-col">
               <header className="h-16 flex items-center border-b border-gray-200 bg-white px-6 shadow-sm">
@@ -54,6 +76,7 @@ const App = () => (
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
-);
+  );
+};
 
 export default App;
