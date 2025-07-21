@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -19,7 +19,8 @@ import {
   FileText,
   CreditCard,
   Truck,
-  DollarSign
+  DollarSign,
+  Calendar
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -29,6 +30,23 @@ interface ActionLog {
   timestamp: Date;
   status: 'success' | 'pending' | 'error';
   message: string;
+}
+
+interface CronJob {
+  key: string;
+  name: string;
+  schedule: string;
+  endpoint: string;
+}
+
+interface SystemStatus {
+  system: {
+    businessNxt: { status: string; lastCheck: string };
+    vendre: { status: string; lastCheck: string };
+    middleware: { status: string; uptime: number };
+  };
+  operations: Array<{ id: string; name: string; status: string }>;
+  cronJobs: CronJob[];
 }
 
 interface SyncAction {
@@ -105,8 +123,38 @@ const syncActions: SyncAction[] = [
 const Index = () => {
   const [isLoading, setIsLoading] = useState<string | null>(null);
   const [actionLogs, setActionLogs] = useState<ActionLog[]>([]);
+  const [systemStatus, setSystemStatus] = useState<SystemStatus | null>(null);
+  const [cronJobs, setCronJobs] = useState<CronJob[]>([]);
+  const [isLoadingStatus, setIsLoadingStatus] = useState(false);
 
   const { toast } = useToast();
+
+  const fetchSystemStatus = async () => {
+    setIsLoadingStatus(true);
+    try {
+      const response = await fetch('http://127.0.0.1:3000/integration/status');
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      const result = await response.json();
+      
+      if (result.success) {
+        setSystemStatus(result.data);
+        setCronJobs(result.data.cronJobs || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch system status:', error);
+    } finally {
+      setIsLoadingStatus(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchSystemStatus();
+    
+    const interval = setInterval(fetchSystemStatus, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   const triggerAction = async (action: SyncAction) => {
     setIsLoading(action.id);
@@ -240,9 +288,22 @@ const Index = () => {
             <Database className="h-4 w-4 text-gray-600" />
           </div>
           <div className="flex items-center gap-2">
-            <CheckCircle className="h-3 w-3 text-green-600" />
-            <span className="text-sm font-mono text-gray-800">STATUS: ONLINE</span>
+            {isLoadingStatus ? (
+              <RefreshCw className="h-3 w-3 text-blue-600 animate-spin" />
+            ) : systemStatus?.system.businessNxt.status === 'connected' ? (
+              <CheckCircle className="h-3 w-3 text-green-600" />
+            ) : (
+              <AlertTriangle className="h-3 w-3 text-red-600" />
+            )}
+            <span className="text-sm font-mono text-gray-800">
+              STATUS: {isLoadingStatus ? 'CHECKING...' : systemStatus?.system.businessNxt.status?.toUpperCase() || 'UNKNOWN'}
+            </span>
           </div>
+          {systemStatus && (
+            <div className="text-xs font-mono text-gray-500 mt-1">
+              Last: {new Date(systemStatus.system.businessNxt.lastCheck).toLocaleTimeString()}
+            </div>
+          )}
         </div>
 
         <div className="bg-white border border-gray-200 p-4 rounded-md">
@@ -251,9 +312,22 @@ const Index = () => {
             <RefreshCw className="h-4 w-4 text-gray-600" />
           </div>
           <div className="flex items-center gap-2">
-            <CheckCircle className="h-3 w-3 text-green-600" />
-            <span className="text-sm font-mono text-gray-800">STATUS: RUNNING</span>
+            {isLoadingStatus ? (
+              <RefreshCw className="h-3 w-3 text-blue-600 animate-spin" />
+            ) : systemStatus?.system.middleware.status === 'running' ? (
+              <CheckCircle className="h-3 w-3 text-green-600" />
+            ) : (
+              <AlertTriangle className="h-3 w-3 text-red-600" />
+            )}
+            <span className="text-sm font-mono text-gray-800">
+              STATUS: {isLoadingStatus ? 'CHECKING...' : systemStatus?.system.middleware.status?.toUpperCase() || 'UNKNOWN'}
+            </span>
           </div>
+          {systemStatus && (
+            <div className="text-xs font-mono text-gray-500 mt-1">
+              Uptime: {Math.floor(systemStatus.system.middleware.uptime / 3600)}h {Math.floor((systemStatus.system.middleware.uptime % 3600) / 60)}m
+            </div>
+          )}
         </div>
 
         <div className="bg-white border border-gray-200 p-4 rounded-md">
@@ -262,9 +336,62 @@ const Index = () => {
             <ShoppingCart className="h-4 w-4 text-gray-600" />
           </div>
           <div className="flex items-center gap-2">
-            <CheckCircle className="h-3 w-3 text-green-600" />
-            <span className="text-sm font-mono text-gray-800">STATUS: SYNCED</span>
+            {isLoadingStatus ? (
+              <RefreshCw className="h-3 w-3 text-blue-600 animate-spin" />
+            ) : systemStatus?.system.vendre.status === 'connected' ? (
+              <CheckCircle className="h-3 w-3 text-green-600" />
+            ) : (
+              <AlertTriangle className="h-3 w-3 text-red-600" />
+            )}
+            <span className="text-sm font-mono text-gray-800">
+              STATUS: {isLoadingStatus ? 'CHECKING...' : systemStatus?.system.vendre.status?.toUpperCase() || 'UNKNOWN'}
+            </span>
           </div>
+          {systemStatus && (
+            <div className="text-xs font-mono text-gray-500 mt-1">
+              Last: {new Date(systemStatus.system.vendre.lastCheck).toLocaleTimeString()}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Cron Jobs */}
+      <div className="bg-white border border-gray-200 rounded-md">
+        <div className="border-b border-gray-200 px-4 py-3">
+          <div className="flex items-center gap-2">
+            <Calendar className="h-4 w-4 text-gray-600" />
+            <h2 className="text-sm font-mono text-gray-900 uppercase tracking-wider">SCHEDULED_JOBS</h2>
+          </div>
+        </div>
+        <div className="p-4">
+          {isLoadingStatus ? (
+            <div className="flex items-center justify-center py-8">
+              <RefreshCw className="h-6 w-6 animate-spin text-blue-600" />
+              <span className="ml-2 text-sm font-mono text-gray-600">LOADING_CRON_JOBS...</span>
+            </div>
+          ) : cronJobs.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {cronJobs.map((job) => (
+                <div key={job.key} className="border border-gray-200 p-4 rounded-md bg-gray-50">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Clock className="h-4 w-4 text-gray-600" />
+                    <h3 className="font-mono text-sm text-gray-900">{job.name}</h3>
+                  </div>
+                  <p className="text-xs text-gray-600 mb-3 font-mono leading-relaxed">
+                    Endpoint: {job.endpoint}
+                  </p>
+                  <Badge className="bg-blue-100 text-blue-800 font-mono text-xs border border-blue-200">
+                    {job.schedule}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <Calendar className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+              <p className="text-sm font-mono text-gray-500">NO_SCHEDULED_JOBS</p>
+            </div>
+          )}
         </div>
       </div>
 
